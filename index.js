@@ -21,8 +21,14 @@ async function run() {
         await client.connect();
         const itemsCollection = client.db('spiceGranary').collection('items')
 
+        //Get -all items
         app.get('/items', async (req, res) => {
-            res.send('connected to mongo db')
+            const query = {};
+            const cursor = itemsCollection.find(query);
+
+            const result = await cursor.toArray();
+
+            res.send(result);
         })
 
         //POST -insert one item
