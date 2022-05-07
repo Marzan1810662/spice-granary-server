@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion ,ObjectId } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const port = process.env.PORT || 5000;
@@ -21,18 +21,25 @@ async function run() {
         await client.connect();
         const itemsCollection = client.db('spiceGranary').collection('items')
 
-        //GET -all items
+        //GET -all items or 6items for home page
         app.get('/items', async (req, res) => {
             const query = {};
+            const itemLimit = parseInt(req.query.itemLimit);
+            console.log(itemLimit);
             const cursor = itemsCollection.find(query);
-
-            const result = await cursor.toArray();
+            let result;
+            if (itemLimit) {
+                result = await cursor.limit(itemLimit).toArray();
+            }
+            else {
+                result = await cursor.toArray();
+            }
 
             res.send(result);
         })
 
         //GET - a specific item
-        app.get('/item/:id', async(req, res) => {
+        app.get('/item/:id', async (req, res) => {
             const id = req.params.id;
 
             const query = { _id: ObjectId(id) }
