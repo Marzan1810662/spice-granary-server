@@ -24,6 +24,14 @@ async function run() {
         app.get('/items', async (req, res) => {
             res.send('connected to mongo db')
         })
+
+        //POST -insert one item
+        app.post('/item', async (req, res) => {
+            const newItem = req.body;
+            const result = await itemsCollection.insertOne(newItem);
+
+            res.send(result);
+        });
     }
     finally {
 
