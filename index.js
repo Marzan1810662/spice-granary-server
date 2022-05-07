@@ -67,6 +67,20 @@ async function run() {
             res.send(result);
         });
 
+        //POST - update item quantity
+        app.put("/item", async (req, res) => {
+            const item = req.body;
+            console.log(item);
+            const filter = { _id: ObjectId(item._id)};
+            const updateDoc = {
+              $set: {
+                quantity: item.quantity,
+              },
+            };
+            const result = await itemsCollection.updateOne(filter, updateDoc);
+            res.send(result);
+          });
+
         //DELETE - delete specificitem
         app.delete('/item/:id', async(req, res) => {
             const id = req.params.id;
