@@ -34,8 +34,19 @@ async function run() {
             else {
                 result = await cursor.toArray();
             }
-
             res.send(result);
+        })
+
+        //GET -get specific item with specific email
+        app.get('/myItems', async (req, res) => {
+            const email = req.query.email;
+            console.log('email',email);
+            const query = { email: email };
+
+            const cursor = itemsCollection.find(query);
+            const resutl = await cursor.toArray();
+            res.send(resutl);
+
         })
 
         //GET - a specific item
