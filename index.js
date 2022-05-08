@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
@@ -11,6 +12,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+function verifyJWt(req, res, next) {
+    const authHeader = req.headers.authorization;
+    console.log('inside veryfiedJWT', authHeader);
+    if (!authHeader) {
+        return res.status(401).send({ message: 'Unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            // console.log(err);
+            return res.status(403).send({ message: 'Forbidden access' })
+        }
+        console.log('decoded', decoded);
+        req.decoded = decoded;
+        next();
+    });
+
+}
+
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kiy1o.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -20,6 +40,15 @@ async function run() {
     try {
         await client.connect();
         const itemsCollection = client.db('spiceGranary').collection('items')
+
+        //Auth 
+        app.post('/token', async (req, res) => {
+            const user = req.body;
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '2d'
+            });
+            res.send({ accessToken });
+        })
 
         //GET -all items or 6items for home page
         app.get('/items', async (req, res) => {
@@ -38,15 +67,18 @@ async function run() {
         })
 
         //GET -get specific item with specific email
-        app.get('/myItems', async (req, res) => {
+        app.get('/myItems', verifyJWt, async (req, res) => {
+            const decodedEmail = req.decoded.email;
             const email = req.query.email;
-            console.log('email',email);
             const query = { email: email };
-
-            const cursor = itemsCollection.find(query);
-            const resutl = await cursor.toArray();
-            res.send(resutl);
-
+            if (email === decodedEmail) {
+                const cursor = itemsCollection.find(query);
+                const resutl = await cursor.toArray();
+                res.send(resutl);
+            }
+            else {
+                res.status(403).send({ message: 'Forbidden Access' })
+            }
         })
 
         //GET - a specific item
@@ -71,21 +103,21 @@ async function run() {
         app.put("/item", async (req, res) => {
             const item = req.body;
             console.log(item);
-            const filter = { _id: ObjectId(item._id)};
+            const filter = { _id: ObjectId(item._id) };
             const updateDoc = {
-              $set: {
-                quantity: item.quantity,
-              },
+                $set: {
+                    quantity: item.quantity,
+                },
             };
             const result = await itemsCollection.updateOne(filter, updateDoc);
             res.send(result);
-          });
+        });
 
         //DELETE - delete specificitem
-        app.delete('/item/:id', async(req, res) => {
+        app.delete('/item/:id', async (req, res) => {
             const id = req.params.id;
             console.log(id);
-            const query = {_id: ObjectId(id)};
+            const query = { _id: ObjectId(id) };
             const result = await itemsCollection.deleteOne(query);
 
             res.send(result);

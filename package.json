@@ -14,6 +14,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.0",
+    "jsonwebtoken": "^8.5.1",
     "mongob": "^1.0.0"
   }
 }
